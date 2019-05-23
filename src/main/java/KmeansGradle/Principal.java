@@ -7,8 +7,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -21,7 +23,7 @@ public class Principal {
 	public static List<Elemento> elementos = new ArrayList<Elemento>();
 	public static boolean continuar;
 
-	public static void main(String[] args) throws InterruptedException {
+	public static void main(String[] args) throws InterruptedException, ExecutionException {
 		long tempoInicio = System.currentTimeMillis();
 
 		System.out.println("RODANDO BASE: " + args[2]);
@@ -44,23 +46,18 @@ public class Principal {
 
 		// Lista de Tasks
 		List<Task> tasks = new ArrayList<>();
-		tasks.add(new Task(elementos, centroides, kmeans));
+		tasks.add(new Task(elementos, centroides, kmeans, 0, elementos.size() / 2));
+		tasks.add(new Task(elementos, centroides, kmeans, (elementos.size() / 2) + 1, elementos.size()));
 		
 		int iteracoes = 0;
 		do {
 			Stopwatch createStarted = Stopwatch.createStarted();
 
-			ExecutorService newFixedThreadPool = Executors.newFixedThreadPool(1);
-			
-			Task task = tasks.get(0);
-			newFixedThreadPool.execute(task);
-			
-			newFixedThreadPool.shutdown();
-			while (!newFixedThreadPool.isTerminated()) {
-				Thread.sleep(100);
-			}
+			ExecutorService newFixedThreadPool = Executors.newFixedThreadPool(2);
+			List<Future<Boolean>> results = tasks.stream().map(newFixedThreadPool::submit).collect(Collectors.toList());
 
-			continuar = task.isContinue();
+			continuar = verificaSeContinua(results);
+			newFixedThreadPool.shutdown();
 			createStarted.stop();
 
 			System.out.println("Tempo encontrar centroide iteracao " + iteracoes + ": "
@@ -68,7 +65,8 @@ public class Principal {
 
 			createStarted.reset();
 			createStarted.start();
-
+			
+			
 			centroides.forEach(centroide -> {
 				List<Elemento> elementosCentroide = elementos.stream().filter(c -> c.getCentroide().equals(centroide))
 						.collect(Collectors.toList());
@@ -97,5 +95,14 @@ public class Principal {
 		} catch (IOException e) {
 			System.out.println("Erro ao achar arquivo.");
 		}
+	}
+
+	private static boolean verificaSeContinua(List<Future<Boolean>> results)
+			throws InterruptedException, ExecutionException {
+		Boolean continua = false;
+		for (Future<Boolean> future : results) {
+			continua = future.get() || continua;
+		}
+		return continua;
 	}
 }
