@@ -1,8 +1,9 @@
 package KmeansGradle;
 
 import java.util.List;
+import java.util.concurrent.Callable;
 
-public class Task implements Runnable {
+public class Task implements Callable<Boolean> {
 
 	private List<Elemento> elementos;
 	private List<Centroide> centroides;
@@ -25,23 +26,17 @@ public class Task implements Runnable {
 		this.fim = fim;
 	}
 
-
 	@Override
-	public void run() {
+	public Boolean call() throws Exception {
 		continuar = false;
-		for (int i = 0; i < elementos.size(); i++) {
+		for (int i = inicio; i < fim; i++) {
 			Centroide nearCentroide = kmeans.encontraCentroideMaisProximo(centroides, elementos.get(i));
 			if (elementos.get(i).getCentroide() != nearCentroide) {
 				elementos.get(i).setCentroide(nearCentroide);
 				continuar = true;
 			}
 		}
-	}
-
-
-	public boolean isContinue() {
 		return continuar;
-
 	}
 
 }

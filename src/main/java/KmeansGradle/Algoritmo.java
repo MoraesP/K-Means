@@ -1,7 +1,7 @@
 package KmeansGradle;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
@@ -12,8 +12,8 @@ public class Algoritmo {
 	public int classe;
 
 	public Centroide encontraCentroideMaisProximo(List<Centroide> centroides, Elemento elemento) {
-		Map<Centroide, Integer> centroideDistancia = new HashMap<Centroide, Integer>();
-
+		Map<Centroide, Integer> centroideDistancia = new LinkedHashMap<Centroide, Integer>();
+		
 		centroides.forEach(centroide -> {
 			int soma = 0;
 			for (int i = 0; i < centroide.getPontos().size(); i++) {

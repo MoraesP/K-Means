@@ -6,6 +6,7 @@ import java.util.List;
 public class Centroide {
 
 	private int classe;
+
 	private List<Integer> pontos;
 	
 	public Centroide() {
