@@ -24,8 +24,8 @@ public class Principal {
 	public static boolean continuar;
 
 	public static void main(String[] args) throws InterruptedException, ExecutionException {
-		long tempoInicio = System.currentTimeMillis();
-
+		Stopwatch start = Stopwatch.createStarted();
+		
 		System.out.println("RODANDO BASE: " + args[2]);
 		Path caminhoCentroide = Paths.get(args[0]);
 		Stream<String> linhasCentroide = null;
@@ -44,50 +44,61 @@ public class Principal {
 		centroides = kmeans.defineCentroides(linhasCentroide, args[2]);
 		elementos = kmeans.defineElementos(linhasElemento, args[2]);
 
+		int nThreads = Integer.parseInt(args[3]);
+
+		int divisao = elementos.size() / nThreads;
+
 		// Lista de Tasks
 		List<Task> tasks = new ArrayList<>();
-		tasks.add(new Task(elementos, centroides, kmeans, 0, elementos.size() / 2));
-		tasks.add(new Task(elementos, centroides, kmeans, (elementos.size() / 2) + 1, elementos.size()));
-		
+		for (int i = 1; i <= nThreads; i++) {
+			if (i == 1) {
+				tasks.add(new Task(elementos, centroides, kmeans, 0, divisao));
+			} else if (i == nThreads) {
+				tasks.add(new Task(elementos, centroides, kmeans, divisao * (nThreads - 1), elementos.size()));
+			} else {
+				tasks.add(new Task(elementos, centroides, kmeans, divisao * (i - 1), divisao * i));
+			}
+		}
+
 		int iteracoes = 0;
 		do {
-			Stopwatch createStarted = Stopwatch.createStarted();
+//			Stopwatch createStarted = Stopwatch.createStarted();
 
-			ExecutorService newFixedThreadPool = Executors.newFixedThreadPool(2);
+			ExecutorService newFixedThreadPool = Executors.newFixedThreadPool(nThreads);
 			List<Future<Boolean>> results = tasks.stream().map(newFixedThreadPool::submit).collect(Collectors.toList());
 
 			continuar = verificaSeContinua(results);
 			newFixedThreadPool.shutdown();
-			createStarted.stop();
+//			createStarted.stop();
 
-			System.out.println("Tempo encontrar centroide iteracao " + iteracoes + ": "
-					+ createStarted.elapsed(TimeUnit.MILLISECONDS));
+//			System.out.println("Tempo encontrar centroide iteracao " + iteracoes + ": "
+//					+ createStarted.elapsed(TimeUnit.MILLISECONDS));
 
-			createStarted.reset();
-			createStarted.start();
-			
-			
+//			createStarted.reset();
+//			createStarted.start();
+
 			centroides.forEach(centroide -> {
 				List<Elemento> elementosCentroide = elementos.stream().filter(c -> c.getCentroide().equals(centroide))
 						.collect(Collectors.toList());
 				centroide.setPontos(kmeans.recalculaPontosCentroide(centroide, elementosCentroide));
 			});
 
-			createStarted.stop();
+//			createStarted.stop();
 
-			System.out.println(
-					"Tempo recalcular iteracao " + iteracoes + ": " + createStarted.elapsed(TimeUnit.MILLISECONDS));
+//			System.out.println(
+//					"Tempo recalcular iteracao " + iteracoes + ": " + createStarted.elapsed(TimeUnit.MILLISECONDS));
 
-			iteracoes++;
+			if(continuar) iteracoes++;
 		} while (continuar);
-
+		
+		start.stop();
 		System.out.println("FINALIZADO");
-
+		
 		Path resultado = Paths.get("resultado_base_" + args[2] + "_sequencial.txt");
 
 		try (BufferedWriter saida = Files.newBufferedWriter(resultado)) {
 			saida.write("Iterações: " + iteracoes + "\n");
-			saida.write("Tempo Total: " + (System.currentTimeMillis() - tempoInicio) + "\n");
+			saida.write("Tempo Total: " + start.elapsed(TimeUnit.MILLISECONDS) + "\n");
 			for (int i = 0; i < elementos.size(); i++) {
 				saida.write("ID: " + i + ", classe: " + elementos.get(i).getCentroide().getClasse() + "\n");
 			}
