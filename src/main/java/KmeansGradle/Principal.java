@@ -25,30 +25,32 @@ public class Principal {
 
 	public static void main(String[] args) throws InterruptedException, ExecutionException {
 		Stopwatch start = Stopwatch.createStarted();
-		
+
+		// Leitura dos parametros para identificação do arquivo
 		System.out.println("RODANDO BASE: " + args[2]);
 		Path caminhoCentroide = Paths.get(args[0]);
 		Stream<String> linhasCentroide = null;
 		Path caminhoBase = Paths.get(args[1]);
 		Stream<String> linhasElemento = null;
-
+		
+		// Leitura dos arquivos de centroide e elementos
 		try {
 			linhasCentroide = Files.lines(caminhoCentroide);
 			linhasElemento = Files.lines(caminhoBase);
 		} catch (IOException e) {
 			System.out.println("Falha na leitura do arquivo");
 		}
-
+		
+		// Definindo os pontos dos centroides e dos elementos
 		Algoritmo kmeans = new Algoritmo();
-
 		centroides = kmeans.defineCentroides(linhasCentroide, args[2]);
 		elementos = kmeans.defineElementos(linhasElemento, args[2]);
 
+		// Leitura da quantidade de threads
 		int nThreads = Integer.parseInt(args[3]);
-
 		int divisao = elementos.size() / nThreads;
 
-		// Lista de Tasks
+		// Lista de Threads que serão executadas
 		List<Task> tasks = new ArrayList<>();
 		for (int i = 1; i <= nThreads; i++) {
 			if (i == 1) {
@@ -59,23 +61,15 @@ public class Principal {
 				tasks.add(new Task(elementos, centroides, kmeans, divisao * (i - 1), divisao * i));
 			}
 		}
-
+		
+		// Execução
 		int iteracoes = 0;
 		do {
-//			Stopwatch createStarted = Stopwatch.createStarted();
-
 			ExecutorService newFixedThreadPool = Executors.newFixedThreadPool(nThreads);
 			List<Future<Boolean>> results = tasks.stream().map(newFixedThreadPool::submit).collect(Collectors.toList());
 
 			continuar = verificaSeContinua(results);
 			newFixedThreadPool.shutdown();
-//			createStarted.stop();
-
-//			System.out.println("Tempo encontrar centroide iteracao " + iteracoes + ": "
-//					+ createStarted.elapsed(TimeUnit.MILLISECONDS));
-
-//			createStarted.reset();
-//			createStarted.start();
 
 			centroides.forEach(centroide -> {
 				List<Elemento> elementosCentroide = elementos.stream().filter(c -> c.getCentroide().equals(centroide))
@@ -83,18 +77,15 @@ public class Principal {
 				centroide.setPontos(kmeans.recalculaPontosCentroide(centroide, elementosCentroide));
 			});
 
-//			createStarted.stop();
-
-//			System.out.println(
-//					"Tempo recalcular iteracao " + iteracoes + ": " + createStarted.elapsed(TimeUnit.MILLISECONDS));
-
-			if(continuar) iteracoes++;
+			if (continuar)
+				iteracoes++;
 		} while (continuar);
-		
+
 		start.stop();
 		System.out.println("FINALIZADO");
 		
-		Path resultado = Paths.get("resultado_base_" + args[2] + "_sequencial.txt");
+		// Cria arquivo com os resultados obtidos
+		Path resultado = Paths.get("resultado_base_" + args[2] + "_" + args[3] + "threads.txt");
 
 		try (BufferedWriter saida = Files.newBufferedWriter(resultado)) {
 			saida.write("Iterações: " + iteracoes + "\n");

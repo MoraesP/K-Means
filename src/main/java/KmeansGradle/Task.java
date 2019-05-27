@@ -12,12 +12,6 @@ public class Task implements Callable<Boolean> {
 	private int inicio;
 	private int fim;
 
-	public Task(List<Elemento> elementos, List<Centroide> centroides, Algoritmo kmeans) {
-		this.elementos = elementos;
-		this.centroides = centroides;
-		this.kmeans = kmeans;
-	}
-	
 	public Task(List<Elemento> elementos, List<Centroide> centroides, Algoritmo kmeans, int inicio, int fim) {
 		this.elementos = elementos;
 		this.centroides = centroides;

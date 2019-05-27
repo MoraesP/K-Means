@@ -13,7 +13,7 @@ public class Algoritmo {
 
 	public Centroide encontraCentroideMaisProximo(List<Centroide> centroides, Elemento elemento) {
 		Map<Centroide, Integer> centroideDistancia = new LinkedHashMap<Centroide, Integer>();
-		
+
 		centroides.forEach(centroide -> {
 			int soma = 0;
 			for (int i = 0; i < centroide.getPontos().size(); i++) {
@@ -22,7 +22,6 @@ public class Algoritmo {
 			centroideDistancia.put(centroide, (int) Math.sqrt(soma));
 		});
 
-//		centroideDistancia.forEach((k,v)->System.out.println("Centroide: " + k.getClasse() + ", distancia: " + v));
 		return centroideDistancia.entrySet().stream().min(Map.Entry.comparingByValue()).get().getKey();
 	}
 
@@ -81,27 +80,5 @@ public class Algoritmo {
 			elementos.add(elemento);
 		});
 		return elementos;
-	}
-
-	public void mostraCentroides(List<Centroide> centroides) {
-		centroides.forEach(centroide -> {
-			centroide.getPontos().forEach(ponto -> {
-				System.out.print(ponto + "\t");
-			});
-		});
-	}
-
-	public void mostraElementos(List<Elemento> elementos) {
-		elementos.forEach(elemento -> {
-			elemento.getPontos().forEach(ponto -> {
-				System.out.print(ponto + "\t");
-			});
-		});
-	}
-
-	public void mostraCentroideDosElementos(List<Elemento> elementos) {
-		elementos.forEach(elemento -> {
-			System.out.println(elemento.getCentroide().getClasse());
-		});
 	}
 }
